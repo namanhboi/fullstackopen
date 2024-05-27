@@ -1,0 +1,20 @@
+.container{
+    padding : 8px;
+    border : 1px;
+}
+.heading {
+    text-align: center;
+    font-size: large;
+}
+
+img {
+    display : block;
+    margin :  0 auto;
+    height: 100px;
+    width: auto;
+}
+.list {
+    list-style-type: none;
+}
+
+

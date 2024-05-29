@@ -1,27 +1,5 @@
 import { useState } from "react";
 
-const AnecdoteOTD = ({ anecdote, votes, onClickVote, onClickGenerate }) => {
-  return (
-    <div>
-      <h1>Anecdote Of The Day</h1>
-      <p>{anecdote}</p>
-      <p>has {votes} vote(s)</p>
-      <button onClick={onClickVote}>vote</button>
-      <button onClick={onClickGenerate}>next anecdote</button>
-    </div>
-  );
-};
-
-const PopularAnecdote = ({ anecdote, votes }) => {
-  return (
-    <div>
-      <h1>Anecdote with the most votes</h1>
-      <p>{anecdote}</p>
-      <p>has {votes} vote(s)</p>
-    </div>
-  );
-};
-
 const App = () => {
   const anecdotes = [
     "If it hurts, do it more often.",
@@ -33,46 +11,31 @@ const App = () => {
     "Programming without an extremely heavy use of console.log is same as if a doctor would refuse to use x-rays or blood tests when diagnosing patients.",
     "The only way to go fast, is to go well.",
   ];
-  const [selected, setSelected] = useState(
-    Math.round(Math.random() * (anecdotes.length - 1))
-  );
-  const [votes, setVotes] = useState({
-    0: 0,
-    1: 0,
-    2: 0,
-    3: 0,
-    4: 0,
-    5: 0,
-    6: 0,
-    7: 0,
-    8: 0,
-  });
+  const [selected, setSelected] = useState(0);
+  const [votes, setVotes] = useState(anecdotes.map((_) => 0));
+  const [mostVotes, setMostVotes] = useState(0);
   const rng = () => {
     setSelected(Math.round(Math.random() * (anecdotes.length - 1)));
   };
 
-  const incVote = (index) => () =>
-    setVotes({
-      ...votes,
-      [index.toString()]: votes[index.toString()] + 1,
-    });
-  let curr_max = 0;
-  let curr_max_index = selected.toString();
-  for (const num in votes) {
-    if (curr_max < votes[num]) {
-      curr_max = votes[num];
-      curr_max_index = num;
+  const incVote = () => {
+    const newVotes = [...votes];
+    newVotes[selected]++;
+    setVotes(newVotes);
+    if (newVotes[selected] > newVotes[mostVotes]) {
+      setMostVotes(selected);
     }
-  }
+  };
   return (
     <>
-      <AnecdoteOTD
-        anecdote={anecdotes[selected]}
-        votes={votes[selected.toString()]}
-        onClickVote={incVote(selected)}
-        onClickGenerate={rng}
-      ></AnecdoteOTD>
-      <PopularAnecdote anecdote={anecdotes[curr_max_index]} votes={curr_max} />
+      <h1>Anecdote Of The Day</h1>
+      <p>{anecdotes[selected]}</p>
+      <p>has {votes[selected]} votes</p>
+      <button onClick={incVote}>vote</button>
+      <button onClick={rng}>new anecdote</button>
+      <h1>Anecdote with the most votes</h1>
+      <p>{anecdotes[mostVotes]}</p>
+      <p>has {votes[mostVotes]} votes</p>
     </>
   );
 };

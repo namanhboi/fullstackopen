@@ -1,11 +1,12 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import contactService from "./services/contacts.js";
 
-const Contacts = ({ contacts }) => {
+const Contacts = ({ contacts, onDelete }) => {
   return (
     <>
       {contacts.map(({ id, name, number }) => (
         <p key={id}>
-          {name} {number}
+          {name} {number} <button onClick={onDelete(id)}>delete</button>
         </p>
       ))}
     </>
@@ -56,23 +57,16 @@ const Filter = ({ filter, onChangeFilter }) => {
 };
 
 const App = () => {
-  const [persons, setPersons] = useState([
-    { name: "Arto Hellas", number: "040-123456", id: 1 },
-    { name: "Ada Lovelace", number: "39-44-5323523", id: 2 },
-    { name: "Dan Abramov", number: "12-43-234345", id: 3 },
-    { name: "Mary Poppendieck", number: "39-23-6423122", id: 4 },
-  ]);
-
+  const [persons, setPersons] = useState([]);
+  useEffect(() => {
+    contactService.getAll().then((initPersons) => {
+      setPersons(initPersons);
+    });
+  }, []);
   const [newName, setNewName] = useState("");
   const [filter, setFilter] = useState("");
-  const [filteredPersons, setFiltereredPersons] = useState(persons);
   const onChangeFilter = (event) => {
     setFilter(event.target.value);
-    setFiltereredPersons(
-      persons.filter(({ name, number, id }) =>
-        name.includes(event.target.value)
-      )
-    );
   };
   const onChangeName = (event) => {
     setNewName(event.target.value);
@@ -88,20 +82,46 @@ const App = () => {
   const onSubmit = (event) => {
     event.preventDefault();
     if (persons.map(({ name, ..._ }) => name).includes(newName)) {
-      window.alert(`${newName} is already added to phonebook.`);
+      window.alert(
+        `${newName} is already added to phonebook, replace the old number with a new one?`
+      );
+      const repeatPerson = persons.find((person) => person.name === newName);
+      contactService
+        .updateContact(repeatPerson.id, {
+          ...repeatPerson,
+          number: newNumber,
+        })
+        .then((responsePerson) => {
+          setPersons(
+            persons.map((person) =>
+              person.id !== responsePerson.id ? person : responsePerson
+            )
+          );
+        });
     } else {
-      const newPersons = persons.concat({
+      const newPerson = {
         name: newName,
         number: newNumber,
-        id: persons.length + 1,
+      };
+      console.log(newPerson);
+      contactService.addContact(newPerson).then((responsePerson) => {
+        console.log(responsePerson);
+        setPersons(persons.concat(responsePerson));
       });
-      console.log(newPersons);
-      setPersons(newPersons);
-      setFiltereredPersons(
-        newPersons.filter(({ name, number, id }) => name.includes(filter))
-      );
     }
   };
+
+  const onDelete = (id) => () => {
+    window.confirm(`Delete ${persons.find((n) => n.id === id).name} ?`);
+    contactService
+      .deleteContact(id)
+      .then((deletedPerson) => {
+        console.log(deletedPerson);
+        setPersons(persons.filter((person) => person.id !== deletedPerson.id));
+      })
+      .catch((error) => console.log(error));
+  };
+
   return (
     <div>
       <h2>Phonebook</h2>
@@ -115,7 +135,10 @@ const App = () => {
         onSubmit={onSubmit}
       ></PersonForm>
       <h2>Numbers</h2>
-      <Contacts contacts={filteredPersons}></Contacts>
+      <Contacts
+        contacts={persons.filter(({ name, ..._ }) => name.includes(filter))}
+        onDelete={onDelete}
+      ></Contacts>
     </div>
   );
 };

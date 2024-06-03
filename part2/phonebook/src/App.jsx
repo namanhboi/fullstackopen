@@ -56,6 +56,15 @@ const Filter = ({ filter, onChangeFilter }) => {
   );
 };
 
+const Message = ({ message, isOpen, autoClose, styleText, style }) => {
+  setTimeout(() => autoClose(), 5000);
+  return isOpen ? (
+    <div style={style}>
+      <h1 style={styleText}>{message}</h1>
+    </div>
+  ) : null;
+};
+
 const App = () => {
   const [persons, setPersons] = useState([]);
   useEffect(() => {
@@ -74,7 +83,39 @@ const App = () => {
   };
 
   const [newNumber, setNewNumber] = useState("");
+  const [isOpenSuccess, setIsOpenSuccess] = useState(false);
+  const [successMes, setSuccessMes] = useState("");
+  const [isOpenFail, setIsOpenFail] = useState(false);
+  const [failMes, setFailMes] = useState("");
 
+  const autoClose = (setIsOpen) => {
+    setIsOpen(false);
+  };
+
+  const styleSucMes = {
+    color: "green",
+    background: "lightgrey",
+    fontSize: 20,
+    borderStyle: "solid",
+    borderRadius: 5,
+    padding: 10,
+    marginBottom: 10,
+  };
+
+  const styleSucText = {
+    color: "green",
+    fontStyle: "italic",
+    fontSize: 16,
+  };
+  const styleFailMes = {
+    ...styleSucMes,
+    color: "red",
+  };
+
+  const styleFailText = {
+    ...styleSucText,
+    color: "red",
+  };
   const onChangeNumber = (event) => {
     setNewNumber(event.target.value);
   };
@@ -82,9 +123,6 @@ const App = () => {
   const onSubmit = (event) => {
     event.preventDefault();
     if (persons.map(({ name, ..._ }) => name).includes(newName)) {
-      window.alert(
-        `${newName} is already added to phonebook, replace the old number with a new one?`
-      );
       const repeatPerson = persons.find((person) => person.name === newName);
       contactService
         .updateContact(repeatPerson.id, {
@@ -92,10 +130,23 @@ const App = () => {
           number: newNumber,
         })
         .then((responsePerson) => {
+          window.alert(
+            `${newName} is already added to phonebook, replace the old number with a new one?`
+          );
           setPersons(
             persons.map((person) =>
               person.id !== responsePerson.id ? person : responsePerson
             )
+          );
+          setIsOpenSuccess(true);
+          setSuccessMes("Number Change Successful.");
+        })
+        .catch((error) => {
+          console.log(error);
+          setIsOpenFail(true);
+          setFailMes(`${repeatPerson.name} already deleted from server`);
+          setPersons(
+            persons.filter((person) => person.name !== repeatPerson.name)
           );
         });
     } else {
@@ -107,6 +158,8 @@ const App = () => {
       contactService.addContact(newPerson).then((responsePerson) => {
         console.log(responsePerson);
         setPersons(persons.concat(responsePerson));
+        setIsOpenSuccess(true);
+        setSuccessMes("Add Contanct Successful.");
       });
     }
   };
@@ -124,6 +177,20 @@ const App = () => {
 
   return (
     <div>
+      <Message
+        style={styleSucMes}
+        message={successMes}
+        isOpen={isOpenSuccess}
+        autoClose={() => autoClose(setIsOpenSuccess)}
+        styleText={styleSucText}
+      />
+      <Message
+        style={styleFailMes}
+        message={failMes}
+        isOpen={isOpenFail}
+        autoClose={() => autoClose(setIsOpenFail)}
+        styleText={styleFailText}
+      />
       <h2>Phonebook</h2>
       <Filter filter={filter} onChangeFilter={onChangeFilter}></Filter>
       <h2>Add a new</h2>
